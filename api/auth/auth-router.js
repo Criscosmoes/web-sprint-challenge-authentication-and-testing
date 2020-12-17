@@ -1,8 +1,55 @@
-const router = require('express').Router();
+const router = require("express").Router();
+const Users = require("./user-model");
+const bcryptjs = require("bcryptjs");
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
-  /*
+// middleware
+const checkPayload = require("../middleware/checkPayload");
+const checkIfUserTaken = require("../middleware/checkIfUserTaken");
+const checkIfUserExists = require("../middleware/checkIfUserExists"); 
+const makeToken = require("../middleware/makeToken"); 
+
+router.post("/register", [checkPayload, checkIfUserTaken], async (req, res) => {
+
+  try {
+    const user = req.body;
+    const rounds = process.env.BRCRYPT_ROUNDS || 8;
+
+    const hashedPass = bcryptjs.hashSync(user.password, rounds);
+
+    const newUser = await Users.add({
+      username: req.body.username,
+      password: hashedPass,
+    });
+    res.status(201).send(newUser);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+
+});
+
+router.post("/login", [checkPayload, checkIfUserExists], async (req, res) => {
+
+try {
+  const user = req.user; 
+
+
+  if(bcryptjs.compareSync(req.body.password, user.password)){
+    const token = makeToken(user); 
+
+    return res.status(200).json({ message: `Welcome, ${user.username}`, token: token })
+  }
+}
+catch(e){
+  res.status(500).send(e.message); 
+}
+
+});
+
+module.exports = router;
+
+//register endpoint
+
+/*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
 
@@ -26,11 +73,12 @@ router.post('/register', (req, res) => {
     4- On FAILED registration due to the `username` being taken,
       the response body should include a string exactly as follows: "username taken".
   */
-});
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
-  /*
+////////////////////////////////////////////////////////////////////
+
+//login endpoint
+
+/*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
 
@@ -53,6 +101,5 @@ router.post('/login', (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
-});
 
-module.exports = router;
+  /////////////////////////////////////////////////
