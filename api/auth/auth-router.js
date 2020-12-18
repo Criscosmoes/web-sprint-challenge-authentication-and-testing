@@ -38,6 +38,9 @@ try {
 
     return res.status(200).json({ message: `Welcome, ${user.username}`, token: token })
   }
+  else {
+    res.status(400).json("invalid credentials"); 
+  }
 }
 catch(e){
   res.status(500).send(e.message); 
